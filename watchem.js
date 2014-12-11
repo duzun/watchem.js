@@ -16,7 +16,7 @@
  *  Depends on https://github.com/duzun/jAJAX - could be easily replaced.
  *
  *
- *  @version 0.1.1
+ *  @version 0.1.2
  *  @license MIT
  *  @author DUzun.Me
  *
@@ -53,22 +53,24 @@
 
         a.href = loc.href;
 
-        var candiates = slice.call(document.querySelectorAll('script[src]')).map(filtSrc);
+        var candiates = slice.call(document.querySelectorAll('script[src]'))
+              .map(filtSrc)
+              .filter(function (i) { return i})
+        ;
         if ( selfWatch ) {
             candiates.push(loc.href);
         }
 
         function add(url, etag) {
-            url in states || win.console && console.log('tracking ', url);
-            states[url] = etag ;
-            list.push(url);
-        }
-
-        candiates.forEach(function (url) {
-            if ( url in states ) {
-
+            if ( !(url in states) ) {
+              win.console && console.log('tracking ', url);
+              list.push(url);
             }
-            else jajax(
+            states[url] = etag ;
+        }
+        candiates.forEach(function (url) {
+            if ( !url ) return;
+            if ( !(url in states) ) jajax(
               {
                 url: url
                 , type: defMethod
@@ -119,7 +121,7 @@
                 win.console && console.log('change detected in ', url);
                 loc.reload();
               }
-              else if ( idx == i ) {
+              else if ( idx === i ) {
                 ++idx;
                 if ( idx >= list.length ) {
                   idx = 0;
