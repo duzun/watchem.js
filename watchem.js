@@ -31,6 +31,7 @@
     ,   altMethod   = 'GET'
     ;
 
+    // Local variables
     var slice       = [].slice
     ,   document    = win.document
     ,   loc         = win.location
@@ -39,32 +40,36 @@
     ,   states      = {}
     ,   types       = {}
     ,   interactive = {}
+    ,   list        = []
     ,   idx
-    ,   list
-    ,   to
+    ,   runTo
+    ,   initTo
     ;
 
-    a.href = loc.href;
-
-    document.addEventListener('DOMContentLoaded', init);
-    setTimeout(init, 3e3); // in case DOMContentLoaded, retrigger init again, with a delay
-
+    // Implementation functions
     function init() {
+        runTo && clearTimeout(runTo);
+
+        a.href = loc.href;
+
         var candiates = slice.call(document.querySelectorAll('script[src]')).map(filtSrc);
         if ( selfWatch ) {
             candiates.push(loc.href);
         }
 
         function add(url, etag) {
+            url in states || win.console && console.log('tracking ', url);
             states[url] = etag ;
             list.push(url);
-            win.console && console.log('tracking ', url);
         }
 
-        list = [];
+        // list = [];
 
         candiates.forEach(function (url) {
-            jajax(
+            if ( url in states ) {
+
+            }
+            else jajax(
               {
                 url: url
                 , type: defMethod
@@ -93,16 +98,22 @@
 
         idx = 0;
         if ( interval ) {
-          to && clearTimeout(to);
-          to = setTimeout(run, interval);
+          runTo = setTimeout(run, interval);
         }
+        if ( reDOM ) {
+          initTo && clearTimeout(initTo);
+          initTo = setTimeout(init, reDOM);
+        }
+
+        return states;
     }
 
     function run() {
-        var url = list[idx]
+        var i = idx
+        ,   url = list[i]
         ,   type = types[url] || defMethod
         ;
-        console.log(type + ':'+idx+':'+url);
+        // console.log(type + ':'+idx+':'+url); // for debug
         jajax(
           {
             url: url
@@ -114,15 +125,18 @@
                 win.console && console.log('change detected in ', url);
                 loc.reload();
               }
-              else {
+              else if ( idx == i ) {
                 ++idx;
                 if ( idx >= list.length ) {
                   idx = 0;
-                  to = interval && setTimeout(run, interval);
+                  runTo = interval && setTimeout(run, interval);
                 }
                 else {
                   run();
                 }
+              }
+              else {
+                  runTo = interval && setTimeout(run, interval);
               }
           }
           , function (xhr, error) {
@@ -144,6 +158,16 @@
 
     function getETag(xhr, result) {
         return xhr && (xhr.getResponseHeader('ETag') || xhr.getResponseHeader('Last-Modified')) || result
+    }
+
+    // AMD
+    if ( typeof define == 'function' && define.amd) {
+        define([], init)
+    }
+    else {
+      // Init
+      document.addEventListener('DOMContentLoaded', init);
+      initTo = setTimeout(init, 3e3); // in case DOMContentLoaded, retrigger init again, with a delay
     }
 
 }
