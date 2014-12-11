@@ -16,7 +16,7 @@
  *  Depends on https://github.com/duzun/jAJAX - could be easily replaced.
  *
  *
- *  @version 0.1.0
+ *  @version 0.1.1
  *  @license MIT
  *  @author DUzun.Me
  *
@@ -49,6 +49,7 @@
     // Implementation functions
     function init() {
         runTo && clearTimeout(runTo);
+        initTo && clearTimeout(initTo);
 
         a.href = loc.href;
 
@@ -62,8 +63,6 @@
             states[url] = etag ;
             list.push(url);
         }
-
-        // list = [];
 
         candiates.forEach(function (url) {
             if ( url in states ) {
@@ -97,13 +96,8 @@
         });
 
         idx = 0;
-        if ( interval ) {
-          runTo = setTimeout(run, interval);
-        }
-        if ( reDOM ) {
-          initTo && clearTimeout(initTo);
-          initTo = setTimeout(init, reDOM);
-        }
+        runTo = interval && setTimeout(run, interval);
+        initTo = reDOM && setTimeout(init, reDOM);
 
         return states;
     }
@@ -165,9 +159,10 @@
         define([], init)
     }
     else {
-      // Init
+      // Init with delay
+      initTo = setTimeout(init, interval);
+      // Catch new stuff on DOMContentLoaded
       document.addEventListener('DOMContentLoaded', init);
-      initTo = setTimeout(init, 3e3); // in case DOMContentLoaded, retrigger init again, with a delay
     }
 
 }
