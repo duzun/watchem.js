@@ -18,9 +18,9 @@
  *           or Zepto v1.1+ with "callbacks" and "deferred" modules loaded.
  *
  *
- *  @version 0.2.0
+ *  @version 0.2.1
  *  @license MIT
- *  @author DUzun.Me
+ *  @author Dumitru Uzun (DUzun.Me)
  *
  */
 
@@ -41,6 +41,7 @@
     ,   loc      = win.location
     ,   hostname = loc.hostname
     ,   list     = []
+    ,   extern   = {}
     ,   states   = {}
     ,   types    = {}
     ,   slice    = list.slice
@@ -57,7 +58,8 @@
         }
     }(win.jQuery||win.Zepto));
 
-    // Implementation functions
+    // Implementation functions:
+
     function init() {
         runTo  && clearTimeout(runTo);
         initTo && clearTimeout(initTo);
@@ -77,7 +79,9 @@
             candiates.push(getPath(loc));
         }
 
+        // Potentially external (to DOM) resources
         var watchemToo = win.watchemToo;
+        var externCandidates = {};
 
         if ( watchemToo ) {
             Object.keys(watchemToo).forEach(function (u) {
@@ -89,6 +93,7 @@
                 var url = getPath(a);
                 if ( watchemToo[u] ) {
                     candiates.push(url);
+                    externCandidates[url] = true;
                 }
                 else {
                     states[url] = false;
@@ -100,6 +105,9 @@
             if ( !(url in states) ) {
               debug('tracking ', url, '-', (etag+'').replace(/[\r\n]+/g,' ').substr(0, 32));
               list.push(url);
+              if ( externCandidates[url] ) {
+                  extern[url] = true;
+              }
             }
             states[url] = etag ;
         }
@@ -140,6 +148,8 @@
         return states;
     }
 
+
+    // Loop through the list of watched resources, asynchronously.
     function run() {
         var i = idx
         ,   url = list[i]
@@ -163,16 +173,19 @@
                         var link = links.pop();
                         var href = link.href.replace(ncReg, '');
                         (link.ownerNode || link).href = href + (href.indexOf('?') < 0 ? '?' : '&')+noCacheParam+'='+now();
-                        console.log(link);
                         states[url] = etag;
+                        // _interval = 1e3; // Give it time to load
                     }
                     else {
-                        loc.reload();
+                        reload();
                     }
                 }
                 else {
                     _interval = 0;
-                    loc.reload();
+                    // Delay reload for external, giving priority to potentially
+                    // open document with which contains the external url.
+                    reload(extern[url] ? interval : 0);
+                    return;
                 }
               }
               else {
@@ -183,7 +196,6 @@
                   }
                   else {
                     _interval = 4;
-                    run();
                   }
                 }
               }
@@ -191,9 +203,15 @@
               runTo = _interval && setTimeout(run, _interval);
           }
           , function (xhr, error) {
-              loc.reload();
+              reload();
           }
         );
+    }
+
+    function reload(delay) {
+        delay
+          ? setTimeout(reload.bind(undefined,0))
+          : loc.reload()
     }
 
     function now() {
