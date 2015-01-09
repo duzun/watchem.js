@@ -18,7 +18,7 @@
  *           or Zepto v1.1+ with "callbacks" and "deferred" modules loaded.
  *
  *
- *  @version 0.2.1
+ *  @version 0.2.2
  *  @license MIT
  *  @author Dumitru Uzun (DUzun.Me)
  *
@@ -158,7 +158,7 @@
         // debug(type + ':'+idx+':'+url); // for debug
         jajax(
           {
-            url: url
+            url: getNCUrl(url)
             , type: type
           }
           , function (result, status, xhr) {
@@ -171,8 +171,7 @@
                     var links = getStyleSheets(url);
                     if ( links.length ) {
                         var link = links.pop();
-                        var href = link.href.replace(ncReg, '');
-                        (link.ownerNode || link).href = href + (href.indexOf('?') < 0 ? '?' : '&')+noCacheParam+'='+now();
+                        (link.ownerNode || link).href = getNCUrl(link.href);
                         states[url] = etag;
                         // _interval = 1e3; // Give it time to load
                     }
@@ -244,6 +243,11 @@
 
     function getPath(a) {
         return a.pathname+a.search.replace(ncReg, '')
+    }
+    
+    function getNCUrl(url) {
+        var href = url.replace(ncReg, '');
+        return href + (href.indexOf('?') < 0 ? '?' : '&')+noCacheParam+'='+(now()&0x3FFFFF).toString(36);
     }
 
     function filtSrc(l) {
