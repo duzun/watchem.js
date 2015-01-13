@@ -1,7 +1,7 @@
 watchem.js
 ==========
 
-##### @version 0.2.1
+##### @version 0.3.0
 
 A very simple script to watch for `.js` & `.css` files present in DOM
 over AJAX and reload the page/CSS when changes are detected.
@@ -25,14 +25,14 @@ watchemToo['/assets/jquery.js']  = false; // don't watch
 ### How it works
 
 It makes `HEAD` requests to the server in the specified interval and compares
-`ETag` or `Last-Modified` header with the stored value.
+`ETag` or `Last-Modified` and `Content-Length` and `Content-Type` header with the stored value.
 
-If server does not return `ETag` or `Last-Modified` header, it makes
+If server does not return any of the tracked headers, it makes
 `GET` requests (which are more expensive) and compares the contents of the file.
 
 ### When should I use it
 
-I find it best suited for TDD / BDD.
+I find it best suited for TDD / BDD and for designing using HTML & CSS.
 
 I've built this script to automatically run [Jasmine](http://jasmine.github.io/) 
 specs inside a Chrome Extension on source files change 
@@ -60,3 +60,8 @@ window.jajax = function (opt, suc, err) {
 I've tested it on **Google Chrome 39** so far. 
 I don't know when I would need to use it in other browser, but PRs are welcome.
 
+### Alternatives
+
+- [Live.js](http://www.livejs.com/)
+- [BrowserSync](http://www.browsersync.io/) (requires Node.js)
+- [Live Reload](http://livereload.com/) (native app)
