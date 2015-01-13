@@ -18,7 +18,7 @@
  *           or Zepto v1.1+ with "callbacks" and "deferred" modules loaded.
  *
  *
- *  @version 0.2.1
+ *  @version 0.3.0
  *  @license MIT
  *  @author Dumitru Uzun (DUzun.Me)
  *
@@ -26,14 +26,15 @@
 
 (function (win, undefined) {
     // Settings
-    var interval    = 500  // Recheck interval
-    ,   reDOM       = 5e3  // Recheck DOM interval
-    ,   selfWatch   = true // Watch document change
-    ,   cssWatch    = true // Watch CSS change
-    ,   ignoreMin   = true // Ignore .min.js or .min.css
-    ,   defMethod   = 'HEAD'
-    ,   altMethod   = 'GET'
+    var interval     = 500  // Recheck interval
+    ,   reDOM        = 5e3  // Recheck DOM interval
+    ,   selfWatch    = true // Watch document change
+    ,   cssWatch     = true // Watch CSS change
+    ,   ignoreMin    = true // Ignore .min.js or .min.css
+    ,   defMethod    = 'HEAD'
+    ,   altMethod    = 'GET'
     ,   noCacheParam = '_w_'
+    ,   headers      = { 'X-Requested-With': 'Watchem' }
     ;
 
     // Local variables
@@ -52,11 +53,13 @@
     ,   initTo
     ;
 
+    // Our AJAX method: jajax(options, success, error)
     var jajax = win.jajax || (function ($) {
         return function (opt, suc, err) {
             return $.ajax(opt).done(suc).fail(err)
         }
     }(win.jQuery||win.Zepto));
+
 
     // Implementation functions:
 
@@ -103,7 +106,7 @@
 
         function add(url, etag) {
             if ( !(url in states) ) {
-              debug('tracking ', url, '-', (etag+'').replace(/[\r\n]+/g,' ').substr(0, 32));
+              debug('tracking ', url, ': "' + (etag+'').replace(/[\r\n]+/g,' ').substr(0, 64) + '"');
               list.push(url);
               if ( externCandidates[url] ) {
                   extern[url] = true;
@@ -116,16 +119,19 @@
             if ( !url ) return;
             if ( !(url in states) ) jajax(
               {
-                url: url
+                url: getNCUrl(url, defMethod)
                 , type: defMethod
+                // , crossDomain: true // removes X-Requested-With header
+                , headers: headers
               }
               , function (result, status, xhr) {
                   var etag = getETag(xhr, result);
                   if ( !etag ) {
                     jajax(
                       {
-                        url: url
+                        url: getNCUrl(url, altMethod)
                         , type: altMethod
+                        , headers: headers
                       }
                       , function (result, status, xhr) {
                           var etag = getETag(xhr, result);
@@ -158,21 +164,21 @@
         // debug(type + ':'+idx+':'+url); // for debug
         jajax(
           {
-            url: url
+            url: getNCUrl(url, type)
             , type: type
+            , headers: headers
           }
           , function (result, status, xhr) {
               var _interval = interval;
               var etag = getETag(xhr, result);
               if ( states[url] != etag ) {
-                debug('change detected in ', url);
+                debug('change detected in ', url, ': "' + states[url] + '" != "' + etag + '"');
                 var ext = getExt(url);
                 if ( ext == 'css' ) {
                     var links = getStyleSheets(url);
                     if ( links.length ) {
                         var link = links.pop();
-                        var href = link.href.replace(ncReg, '');
-                        (link.ownerNode || link).href = href + (href.indexOf('?') < 0 ? '?' : '&')+noCacheParam+'='+now();
+                        (link.ownerNode || link).href = getNCUrl(link.href);
                         states[url] = etag;
                         // _interval = 1e3; // Give it time to load
                     }
@@ -246,6 +252,14 @@
         return a.pathname+a.search.replace(ncReg, '')
     }
 
+    function getNCUrl(url, meth) {
+        var href = url.replace(ncReg, '');
+        if ( !meth || meth == 'HEAD' ) {
+            href += (href.indexOf('?') < 0 ? '?' : '&')+noCacheParam+'='+(now()&0x3FFFFF).toString(36);
+        }
+        return href;
+    }
+
     function filtSrc(l) {
         var href = l.src || l.href;
         if ( !href ) return undefined;
@@ -258,7 +272,27 @@
     }
 
     function getETag(xhr, result) {
-        return xhr && (xhr.getResponseHeader('ETag') || xhr.getResponseHeader('Last-Modified')) || result
+        if ( xhr ) {
+            var headers = ['Content-Type', 'Content-Length', 'Last-Modified', 'ETag']
+            ,   ret = []
+            ,   i, h, v
+            ;
+            for ( i = headers.length; i--; ) {
+                if ( v = xhr.getResponseHeader(h = headers[i]) ) {
+                    // ETag alone is enough
+                    if ( h == 'ETag' ) {
+                        return v;
+                    }
+                    // Compact Last-Modified - not necessary, just for fun and debug
+                    if ( h == 'Last-Modified' ) {
+                        v = (new Date(v) / 1e3).toString(36);
+                    }
+                    ret[i] = v;
+                }
+            }
+            if ( ret.length ) return ret.join('~');
+        }
+        return result;
     }
 
 
