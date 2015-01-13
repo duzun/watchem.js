@@ -18,7 +18,7 @@
  *           or Zepto v1.1+ with "callbacks" and "deferred" modules loaded.
  *
  *
- *  @version 0.3.0
+ *  @version 0.3.1
  *  @license MIT
  *  @author Dumitru Uzun (DUzun.Me)
  *
@@ -230,7 +230,16 @@
     }
 
     function getStyleSheets(href) {
-        var links = slice.call(document.styleSheets || document.querySelectorAll('link[rel=stylesheet][href]'));
+        var _links = slice.call(document.styleSheets || document.querySelectorAll('link[rel=stylesheet][href]'));
+        var links = [];
+        for ( var i = 0, l; i < _links.length; i++ ) {
+            l = _links[i];
+            if ( l.href ) links.push(l);
+            else  // @TODO: track @import from external CSS, avoiding circular @import
+            if ( l = l.cssRules ) {
+                _links = _links.concat( slice.call(l) );
+            }
+        }
         if ( href ) {
             a.href = href;
             href = a.href;
