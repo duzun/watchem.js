@@ -18,13 +18,15 @@
  *           or Zepto v1.1+ with "callbacks" and "deferred" modules loaded.
  *
  *
- *  @version 0.3.1
+ *  @version 0.3.2
  *  @license MIT
  *  @author Dumitru Uzun (DUzun.Me)
  *
  */
 
 (function (win, undefined) {
+    var version = '0.3.2';
+
     // Settings
     var interval     = 500  // Recheck interval
     ,   reDOM        = 5e3  // Recheck DOM interval
@@ -309,6 +311,8 @@
         return win.console && console.debug && console.debug.apply(console, arguments);
     }
 
+    init.version = version;
+
     // AMD
     if ( typeof define == 'function' && define.amd) {
         define([], init)
@@ -319,8 +323,6 @@
       // Catch new stuff on DOMContentLoaded
       document.addEventListener('DOMContentLoaded', init);
     }
-
-
 
 }
 (this));
