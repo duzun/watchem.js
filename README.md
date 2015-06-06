@@ -57,7 +57,7 @@ window.jajax = function (opt, suc, err) {
 
 ### Browser Compatibility
 
-I've tested it on **Google Chrome 39** so far. 
+I've tested it on **Google Chrome 39-43**, **Safari 5.1-8.0** and **Firefox 36-38** so far. 
 I don't know when I would need to use it in other browser, but PRs are welcome.
 
 ### Alternatives
