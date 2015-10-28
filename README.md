@@ -65,3 +65,4 @@ I don't know when I would need to use it in other browser, but PRs are welcome.
 - [Live.js](http://www.livejs.com/)
 - [BrowserSync](http://www.browsersync.io/) (requires Node.js)
 - [Live Reload](http://livereload.com/) (native app)
+- [NppSync](https://github.com/duzun/NppSync) (for Notepad++ lovers)
