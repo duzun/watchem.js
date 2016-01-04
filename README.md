@@ -8,7 +8,7 @@ over AJAX and reload the page/CSS when changes are detected.
 
 ### Usage
 
-Just through the `watchem.min.js` into your HTML and it starts watching your assets.
+Just throw the `watchem.min.js` into your HTML and it starts watching your assets.
 That simple!
 
 
