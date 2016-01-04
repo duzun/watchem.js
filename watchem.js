@@ -18,14 +18,13 @@
  *           or Zepto v1.1+ with "callbacks" and "deferred" modules loaded.
  *
  *
- *  @version 0.3.2
  *  @license MIT
+ *  @version 0.4.0
  *  @author Dumitru Uzun (DUzun.Me)
- *
  */
 
 (function (win, undefined) {
-    var version = '0.3.2';
+    var version = '0.4.0';
 
     // Settings
     var interval     = 500  // Recheck interval
@@ -43,10 +42,28 @@
     var document = win.document
     ,   loc      = win.location
     ,   hostname = loc.hostname
+    ,   LS       = win.localStorage
+    ,   setTimeout   = win.setTimeout
+    ,   clearTimeout = win.clearTimeout
     ,   list     = []
     ,   extern   = {}
     ,   states   = {}
     ,   types    = {}
+    ,   watchem  = {
+            list  : list
+          , extern: extern
+          , states: states
+          , types : types
+
+          , stopped: undefined
+
+          , stop : stop  // stop the watcher
+          , start: start // start the watcher
+          , init : init  // init with resources from DOM
+          , run  : run   // one tick of watcher (used internally)
+
+          , debug: debug
+        }
     ,   slice    = list.slice
     ,   a        = document.createElement('a')
     ,   ncReg    = new RegExp('(\\?|\\&)'+noCacheParam+'=[^\\&]+')
@@ -57,6 +74,9 @@
 
     // Our AJAX method: jajax(options, success, error)
     var jajax = win.jajax || (function ($) {
+        if ( !($ && $.ajax) ) {
+            throw new Error('Watchem: no jAJAX, jQuery or Zepto found!');
+        }
         return function (opt, suc, err) {
             return $.ajax(opt).done(suc).fail(err)
         }
@@ -69,15 +89,16 @@
         runTo  && clearTimeout(runTo);
         initTo && clearTimeout(initTo);
 
+        if ( LS ) {
+            watchem.stopped = +LS.watchemStopped || false;
+        }
+
         a.href = loc.href;
 
-        var candiates = getScripts().map(filtSrc)
-              .filter(function (i) { return i})
-        ;
+        var candiates = getScripts().map(filtSrc).filter(identity);
         if ( cssWatch ) {
             candiates = candiates.concat(
-              getStyleSheets().map(filtSrc)
-                  .filter(function (i) { return i})
+              getStyleSheets().map(filtSrc).filter(identity)
             );
         }
         if ( selfWatch ) {
@@ -119,43 +140,31 @@
 
         candiates.forEach(function (url) {
             if ( !url ) return;
-            if ( !(url in states) ) jajax(
-              {
-                url: getNCUrl(url, defMethod)
-                , type: defMethod
-                // , crossDomain: true // removes X-Requested-With header
-                , headers: headers
-              }
+            if ( !(url in states) ) request(defMethod, url
               , function (result, status, xhr) {
-                  var etag = getETag(xhr, result);
-                  if ( !etag ) {
-                    jajax(
-                      {
-                        url: getNCUrl(url, altMethod)
-                        , type: altMethod
-                        , headers: headers
-                      }
-                      , function (result, status, xhr) {
-                          var etag = getETag(xhr, result);
-                          types[url] = altMethod;
-                          add(url, etag);
-                      }
-                    );
-                  }
-                  else {
-                    add(url, etag);
-                  }
-              }
+                    var etag = getETag(xhr, result);
+                    if ( !etag ) {
+                        request(altMethod, url
+                          , function (result, status, xhr) {
+                                var etag = getETag(xhr, result);
+                                types[url] = altMethod;
+                                add(url, etag);
+                            }
+                        );
+                    }
+                    else {
+                        add(url, etag);
+                    }
+                }
             );
         });
 
         idx = 0;
-        runTo = interval && setTimeout(run, interval);
+        runTo = !watchem.stopped && interval && setTimeout(run, interval);
         initTo = reDOM && setTimeout(init, reDOM);
 
-        return states;
+        return watchem;
     }
-
 
     // Loop through the list of watched resources, asynchronously.
     function run() {
@@ -164,55 +173,89 @@
         ,   type = types[url] || defMethod
         ;
         // debug(type + ':'+idx+':'+url); // for debug
-        jajax(
-          {
-            url: getNCUrl(url, type)
-            , type: type
-            , headers: headers
-          }
+        request(type, url
           , function (result, status, xhr) {
-              var _interval = interval;
-              var etag = getETag(xhr, result);
-              if ( states[url] != etag ) {
-                debug('change detected in ', url, ': "' + states[url] + '" != "' + etag + '"');
-                var ext = getExt(url);
-                if ( ext == 'css' ) {
-                    var links = getStyleSheets(url);
-                    if ( links.length ) {
-                        var link = links.pop();
-                        (link.ownerNode || link).href = getNCUrl(link.href);
-                        states[url] = etag;
-                        // _interval = 1e3; // Give it time to load
+                var _interval = interval;
+                var etag = getETag(xhr, result);
+                if ( states[url] != etag ) {
+                    debug('change detected in ', url, ': "' + states[url] + '" != "' + etag + '"');
+                    var ext = getExt(url);
+                    if ( ext == 'css' ) {
+                        var links = getStyleSheets(url);
+                        if ( links.length ) {
+                            var link = links.pop();
+                            (link.ownerNode || link).href = getNCUrl(link.href);
+                            states[url] = etag;
+                            // _interval = 1e3; // Give it time to load
+                        }
+                        else {
+                            reload();
+                        }
                     }
                     else {
-                        reload();
+                        _interval = 0;
+                        // Delay reload for external, giving priority to potentially
+                        // open document with which contains the external url.
+                        reload(extern[url] ? interval : 0);
+                        return;
                     }
                 }
                 else {
-                    _interval = 0;
-                    // Delay reload for external, giving priority to potentially
-                    // open document with which contains the external url.
-                    reload(extern[url] ? interval : 0);
-                    return;
+                    if ( idx === i ) {
+                        ++idx;
+                        if ( idx >= list.length ) {
+                            idx = 0;
+                        }
+                        else {
+                            _interval = 4;
+                        }
+                    }
                 }
-              }
-              else {
-                if ( idx === i ) {
-                  ++idx;
-                  if ( idx >= list.length ) {
-                    idx = 0;
-                  }
-                  else {
-                    _interval = 4;
-                  }
+                if ( !watchem.stopped ) {
+                    runTo && clearTimeout(runTo);
+                    runTo = _interval && setTimeout(run, _interval);
                 }
-              }
-              runTo && clearTimeout(runTo);
-              runTo = _interval && setTimeout(run, _interval);
-          }
+            }
           , function (xhr, error) {
-              reload();
-          }
+                if ( !watchem.stopped ) {
+                    reload();
+                }
+            }
+        );
+    }
+
+    function stop() {
+        runTo && clearTimeout(runTo);
+        runTo = undefined;
+        watchem.stopped = now();
+        if ( LS ) {
+            LS.watchemStopped = watchem.stopped;
+        }
+    }
+
+    function start() {
+        if ( watchem.stopped ) {
+            delete watchem.stopped;
+            if ( LS ) {
+                delete LS.watchemStopped;
+            }
+            init();
+        }
+        else {
+            run();
+        }
+    }
+
+    function request(method, url, onsuc, onerr) {
+        return jajax(
+            {
+                url: getNCUrl(url, method)
+              , method: method
+              , headers: headers
+              // , crossDomain: true // removes X-Requested-With header
+            }
+          , onsuc
+          , onerr
         );
     }
 
@@ -224,6 +267,10 @@
 
     function now() {
         return Date.now() || (new Date).getTime()
+    }
+
+    function identity(val) {
+        return val;
     }
 
     function getScripts() {
@@ -308,7 +355,10 @@
 
 
     function debug() {
-        return win.console && console.debug && console.debug.apply(console, arguments);
+        if ( win.console && console.debug ) {
+            watchem.debug = debug = console.debug.bind(console);
+            return debug.apply(console, arguments);
+        }
     }
 
     init.version = version;
@@ -318,10 +368,12 @@
         define([], init)
     }
     else {
-      // Init with delay
-      initTo = setTimeout(init, interval);
-      // Catch new stuff on DOMContentLoaded
-      document.addEventListener('DOMContentLoaded', init);
+        // Init with delay
+        initTo = setTimeout(init, interval);
+        // Catch new stuff on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', init);
+
+        win.watchem = watchem;
     }
 
 }

@@ -1,22 +1,40 @@
 watchem.js
 ==========
 
-##### @version 0.3.2
+##### @version 0.4.0
 
 A very simple script to watch for `.js` & `.css` files present in DOM
 over AJAX and reload the page/CSS when changes are detected.
 
 ### Usage
 
+Just through the `watchem.min.js` into your HTML and it starts watching your assets.
+That simple!
+
+
 At the boottom of you `<body>`, after all `<script>` tags add this:
 
 ```html
-<script src="watchem.js"></script>
+<script src="watchem.min.js" async></script>
 ```
+
+
+You can stop the watcher from console
+
+```js
+watchem.stop(); // stops the wather and remembers the state in localStorage
+```
+
+and start it later
+
+```js
+watchem.start();
+```
+
 
 You can add more files to watchem or exclude some by:
 
-```javascript
+```js
 var watchemToo = window.watchemToo || (window.watchemToo = {});
 watchemToo['/assets/someModule.js'] = true; // watch
 watchemToo['/assets/jquery.js']  = false; // don't watch
@@ -34,9 +52,9 @@ If server does not return any of the tracked headers, it makes
 
 I find it best suited for TDD / BDD and for designing using HTML & CSS.
 
-I've built this script to automatically run [Jasmine](http://jasmine.github.io/) 
-specs inside a Chrome Extension on source files change 
-(do you know about [Karma](http://karma-runner.github.io/)?), 
+I've built this script to automatically run [Jasmine](http://jasmine.github.io/)
+specs inside a Chrome Extension on source files change
+(do you know about [Karma](http://karma-runner.github.io/)?),
 but it can be successfully used for any web app.
 
 For advanced stuff I recomend [BrowserSync](http://www.browsersync.io/) (requires Node.js).
@@ -49,7 +67,7 @@ Requires one of:
 - or [jQuery v1.5+](http://api.jquery.com/jquery.ajax/)
 - or [Zepto v1.1+](http://zeptojs.com/#$.ajax) "callbacks" and "deferred" modules loaded
 - or a custom method named `jajax` that looks like this one:
-```javascript
+```js
 window.jajax = function (opt, suc, err) {
     return jQuery.ajax(opt).done(suc).fail(err)
 }
@@ -57,7 +75,7 @@ window.jajax = function (opt, suc, err) {
 
 ### Browser Compatibility
 
-I've tested it on **Google Chrome 39-43**, **Safari 5.1-8.0** and **Firefox 36-38** so far. 
+I've tested it on **Google Chrome 39-47**, **Safari 5.1-9.0** and **Firefox 36-41** so far.
 I don't know when I would need to use it in other browser, but PRs are welcome.
 
 ### Alternatives
