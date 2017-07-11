@@ -8,6 +8,7 @@
     "email": "contact@duzun.me",
     "url": "http://DUzun.Me/"
   },
+  "reveal": true,
   "scripts": {
     "verup": "node ./node_modules/verup",
     "build": "node ./build.js"
