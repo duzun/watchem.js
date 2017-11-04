@@ -19,12 +19,14 @@
  *
  *
  *  @license MIT
- *  @version 0.4.0
+ *  @version 0.5.0
  *  @author Dumitru Uzun (DUzun.Me)
  */
 
+/*globals define*/
+
 (function (win, undefined) {
-    var version = '0.4.0';
+    var version = '0.5.0';
 
     // Settings
     var interval     = 500  // Recheck interval
@@ -61,6 +63,7 @@
           , start: start // start the watcher
           , init : init  // init with resources from DOM
           , run  : run   // one tick of watcher (used internally)
+          , watch: watch // add files to watch
 
           , debug: debug
         }
@@ -78,14 +81,14 @@
             throw new Error('Watchem: no jAJAX, jQuery or Zepto found!');
         }
         return function (opt, suc, err) {
-            return $.ajax(opt).done(suc).fail(err)
-        }
+            return $.ajax(opt).done(suc).fail(err);
+        };
     }(win.jQuery||win.Zepto));
 
 
     // Implementation functions:
 
-    function init() {
+    function init(files) {
         runTo  && clearTimeout(runTo);
         initTo && clearTimeout(initTo);
 
@@ -105,59 +108,15 @@
             candiates.push(getPath(loc));
         }
 
+        watch(candiates);
+
+        files && watch(files, true);
+
         // Potentially external (to DOM) resources
         var watchemToo = win.watchemToo;
-        var externCandidates = {};
-
         if ( watchemToo ) {
-            Object.keys(watchemToo).forEach(function (u) {
-                a.href = u;
-                if ( a.hostname != hostname ) {
-                    delete watchemToo[u];
-                    return;
-                }
-                var url = getPath(a);
-                if ( watchemToo[u] ) {
-                    candiates.push(url);
-                    externCandidates[url] = true;
-                }
-                else {
-                    states[url] = false;
-                }
-            });
+            watch(watchemToo, true);
         }
-
-        function add(url, etag) {
-            if ( !(url in states) ) {
-              debug('tracking ', url, ': "' + (etag+'').replace(/[\r\n]+/g,' ').substr(0, 64) + '"');
-              list.push(url);
-              if ( externCandidates[url] ) {
-                  extern[url] = true;
-              }
-            }
-            states[url] = etag ;
-        }
-
-        candiates.forEach(function (url) {
-            if ( !url ) return;
-            if ( !(url in states) ) request(defMethod, url
-              , function (result, status, xhr) {
-                    var etag = getETag(xhr, result);
-                    if ( !etag ) {
-                        request(altMethod, url
-                          , function (result, status, xhr) {
-                                var etag = getETag(xhr, result);
-                                types[url] = altMethod;
-                                add(url, etag);
-                            }
-                        );
-                    }
-                    else {
-                        add(url, etag);
-                    }
-                }
-            );
-        });
 
         idx = 0;
         runTo = !watchem.stopped && interval && setTimeout(run, interval);
@@ -166,8 +125,52 @@
         return watchem;
     }
 
+    function watch(files, asExtern) {
+        function add(url, etag, added) {
+            if ( added ) {
+                debug('tracking ', url, ': "' + (etag+'').replace(/[\r\n]+/g,' ').substr(0, 64) + '"');
+                if ( asExtern ) {
+                    extern[url] = true;
+                }
+            }
+        }
+
+        if ( !files ) return;
+
+        if ( typeof files == 'string' ) {
+            files = [files];
+        }
+
+        if( Array.isArray(files) ) {
+            files.forEach(function (u) {
+                var url = normPath(u);
+                if ( url ) {
+                    getState(url, add);
+                }
+            });
+        }
+        else {
+            Object.keys(files).forEach(function (u) {
+                var url = normPath(u);
+                if ( !url ) {
+                    delete files[u];
+                    return;
+                }
+                if ( files[u] ) {
+                    getState(url, add);
+                }
+                else {
+                    states[url] = false;
+                }
+            });
+        }
+    }
+
     // Loop through the list of watched resources, asynchronously.
-    function run() {
+    function run(files) {
+        if ( files ) {
+            watch(files, true);
+        }
         var i = idx
         ,   url = list[i]
         ,   type = types[url] || defMethod
@@ -233,16 +236,16 @@
         }
     }
 
-    function start() {
+    function start(files) {
         if ( watchem.stopped ) {
             delete watchem.stopped;
             if ( LS ) {
                 delete LS.watchemStopped;
             }
-            init();
+            init(files);
         }
         else {
-            run();
+            run(files);
         }
     }
 
@@ -262,11 +265,11 @@
     function reload(delay) {
         delay
           ? setTimeout(reload.bind(undefined,0))
-          : loc.reload()
+          : loc.reload();
     }
 
     function now() {
-        return Date.now() || (new Date).getTime()
+        return Date.now();
     }
 
     function identity(val) {
@@ -294,7 +297,7 @@
             href = a.href;
             links = links.filter(function (l) {
                 var h = l.href;
-                return ( h && h.indexOf(href) == 0 )
+                return ( h && h.indexOf(href) == 0 );
             });
         }
         return links;
@@ -307,7 +310,15 @@
     }
 
     function getPath(a) {
-        return a.pathname+a.search.replace(ncReg, '')
+        return a.pathname+a.search.replace(ncReg, '');
+    }
+
+    function normPath(url) {
+        a.href = url;
+        if ( a.hostname != hostname ) {
+            return;
+        }
+        return getPath(a);
     }
 
     function getNCUrl(url, meth) {
@@ -354,9 +365,45 @@
     }
 
 
+    function addURL(url, etag, altMethod) {
+        var inState = url in states;
+        if ( !inState ) {
+            list.push(url);
+        }
+        if ( altMethod ) {
+            types[url] = altMethod;
+        }
+        states[url] = etag;
+
+        return !inState;
+    }
+
+    function getState(url, ondone) {
+        if ( !url ) return;
+        if ( !(url in states) ) return request(defMethod, url
+          , function (result, status, xhr) {
+                var etag = getETag(xhr, result);
+                if ( !etag ) {
+                    request(altMethod, url
+                      , function (result, status, xhr) {
+                            var etag = getETag(xhr, result);
+                            ondone(url, etag, addURL(url, etag, altMethod));
+                        }
+                    );
+                }
+                else {
+                    ondone(url, etag, addURL(url, etag));
+                }
+            }
+        );
+    }
+
     function debug() {
-        if ( win.console && console.debug ) {
-            watchem.debug = debug = console.debug.bind(console);
+        var console = win.console;
+        if ( console && console.debug ) {
+            debug = //jshint ignore:line
+            watchem.debug =
+            console.debug.bind(console);
             return debug.apply(console, arguments);
         }
     }
@@ -365,7 +412,7 @@
 
     // AMD
     if ( typeof define == 'function' && define.amd) {
-        define([], init)
+        define([], init);
     }
     else {
         // Init with delay

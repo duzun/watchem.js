@@ -1,7 +1,7 @@
 watchem.js
 ==========
 
-##### @version 0.4.0
+##### @version 0.5.0
 
 A very simple script to watch for `.js` & `.css` files present in DOM
 over AJAX and reload the page/CSS when changes are detected.
@@ -35,9 +35,14 @@ watchem.start();
 You can add more files to watchem or exclude some by:
 
 ```js
-var watchemToo = window.watchemToo || (window.watchemToo = {});
+var watchemToo = {};
 watchemToo['/assets/someModule.js'] = true; // watch
 watchemToo['/assets/jquery.js']  = false; // don't watch
+
+watchem.watch(watchemToo);
+
+// External (to DOM) resources have lower priority (just a delay in watching)
+watchem.watch(['/external/to/dom/file.js'], true);
 ```
 
 ### How it works
