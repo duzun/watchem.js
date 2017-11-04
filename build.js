@@ -1,7 +1,12 @@
 /**
  *   Compile JS files using Closure-Compiler service
  */
-var http        = require('http');
+
+/*jshint
+  node: true
+*/
+
+var https       = require('https');
 var fs          = require('fs');
 var path        = require('path');
 var querystring = require('querystring');
@@ -10,11 +15,11 @@ var hashes = ['watchem.js'];
 
 var dir = __dirname;
 var dist = dir;
-var packo = JSON.parse(fs.readFileSync(path.join(dir, 'package.json')));
-var version = packo.version;
+// var packo = JSON.parse(fs.readFileSync(path.join(dir, 'package.json')));
+// var version = packo.version;
 
 if ( !fs.existsSync(dist) ) {
-    fs.mkdir(dist)
+    fs.mkdir(dist);
 }
 
 hashes.forEach(function (filename) {
@@ -27,7 +32,7 @@ hashes.forEach(function (filename) {
             fs.writeFile(_filename, data.trim(), function (err) {
                 if (err) throw err;
                 console.log("\x1b[32m%s\x1b[0m", _filename);
-            })
+            });
         }
     });
 });
@@ -37,7 +42,7 @@ function compileFile(filename, cb) {
     fs.readFile(
       filename
       , { encoding: 'utf-8' }
-      , function (err, data) { err ? cb(err) : compile(data, cb) }
+      , function (err, data) { err ? cb(err) : compile(data, cb); }
     );
 }
 
@@ -52,9 +57,9 @@ function compile(script, cb) {
 
     var data = querystring.stringify(options);
 
-    var req = http.request({
+    var req = https.request({
       hostname: 'closure-compiler.appspot.com'
-      , port: 80
+      , port: 443
       , path: '/compile'
       , method: 'POST'
       , headers: {
@@ -65,8 +70,8 @@ function compile(script, cb) {
       // console.log('STATUS: ' + res.statusCode);
       var body = [];
       res.setEncoding('utf8');
-      res.on('data', function (chunk) { body.push(chunk) });
-      res.on('end', function () { cb(null, body = body.join(''), res) });
+      res.on('data', function (chunk) { body.push(chunk); });
+      res.on('end', function () { cb(null, body = body.join(''), res); });
     });
 
     req.on('error', cb);
@@ -74,4 +79,3 @@ function compile(script, cb) {
     req.write(data);
     req.end();
 }
-
