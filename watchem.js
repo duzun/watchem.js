@@ -19,14 +19,14 @@
  *
  *
  *  @license MIT
- *  @version 0.5.0
+ *  @version 0.6.0
  *  @author Dumitru Uzun (DUzun.Me)
  */
 
 /*globals define*/
 
 (function (win, undefined) {
-    var version = '0.5.0';
+    var version = '0.6.0';
 
     // Settings
     var interval     = 500  // Recheck interval
@@ -78,13 +78,20 @@
     // Our AJAX method: jajax(options, success, error)
     var jajax = win.jajax || (function ($) {
         if ( !($ && $.ajax) ) {
-            throw new Error('Watchem: no jAJAX, jQuery or Zepto found!');
+            load_js('https://cdn.rawgit.com/duzun/jAJAX/master/dist/jajax.1.2.0.min.js', 
+            function () {
+                if ( win.jajax ) {
+                    jajax = win.jajax;
+                }
+            });
         }
         return function (opt, suc, err) {
+            if ( !($ && $.ajax) ) {
+                throw new Error('Watchem: no jAJAX, jQuery or Zepto found!');
+            }
             return $.ajax(opt).done(suc).fail(err);
         };
     }(win.jQuery||win.Zepto));
-
 
     // Implementation functions:
 
@@ -406,6 +413,26 @@
             console.debug.bind(console);
             return debug.apply(console, arguments);
         }
+    }
+    
+    function load_js(src, clb) {
+        var s = document.createElement('SCRIPT');
+        s.async = 1;
+        s.src = src;
+        var b = document.getElementsByTagName('script')[0];
+        s.onload = s.onreadystatechange = function (evt) {
+            if( s && (!(b=s.readyState)||b=='loaded'||b=='complete') ) {
+                if ( s ) {
+                    clb && clb.call(s, evt);
+                    if ( s.parentNode ) {
+                        s.parentNode.removeChild(s);
+                    }
+                    s = undefined;
+                }
+            }
+        };
+        b.parentNode.insertBefore(s, b);
+        return s;
     }
 
     init.version = version;

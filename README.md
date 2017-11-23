@@ -1,7 +1,7 @@
 watchem.js
 ==========
 
-##### @version 0.5.0
+##### @version 0.6.0
 
 A very simple script to watch for `.js` & `.css` files present in DOM
 over AJAX and reload the page/CSS when changes are detected.
@@ -77,6 +77,9 @@ window.jajax = function (opt, suc, err) {
     return jQuery.ajax(opt).done(suc).fail(err)
 }
 ```
+
+If none of the above is found, it will try to load [cdn.rawgit.com/jAJAX](https://cdn.rawgit.com/duzun/jAJAX/master/dist/jajax.1.2.0.min.js)
+automatically.
 
 ### Browser Compatibility
 
