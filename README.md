@@ -15,7 +15,7 @@ That simple!
 At the boottom of you `<body>`, after all `<script>` tags add this:
 
 ```html
-<script src="watchem.min.js" async></script>
+<script src="https://cdn.duzun.me/js/watchem.min.js" async></script>
 ```
 
 
