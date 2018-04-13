@@ -57,24 +57,25 @@ If server does not return any of the tracked headers, it makes
 
 I find it best suited for TDD / BDD and for designing using HTML & CSS.
 
-I've built this script to automatically run [Jasmine](http://jasmine.github.io/)
+I've built this script to automatically run [Jasmine](https://jasmine.github.io/)
 specs inside a Chrome Extension on source files change
-(do you know about [Karma](http://karma-runner.github.io/)?),
+(do you know about [Karma](https://karma-runner.github.io/)?),
 but it can be successfully used for any web app.
 
-For advanced stuff I recomend [BrowserSync](http://www.browsersync.io/) (requires Node.js).
+For advanced stuff I recomend [BrowserSync](https://browsersync.io/) (requires Node.js).
 
 ### Dependencies
 
 Requires one of:
 
 - [jAJAX](https://github.com/duzun/jAJAX)
-- or [jQuery v1.5+](http://api.jquery.com/jquery.ajax/)
+- or [jQuery v1.5+](https://api.jquery.com/jquery.ajax/)
 - or [Zepto v1.1+](http://zeptojs.com/#$.ajax) "callbacks" and "deferred" modules loaded
 - or a custom method named `jajax` that looks like this one:
+
 ```js
 window.jajax = function (opt, suc, err) {
-    return jQuery.ajax(opt).done(suc).fail(err)
+	return jQuery.ajax(opt).done(suc).fail(err)
 }
 ```
 
@@ -88,7 +89,7 @@ I don't know when I would need to use it in other browser, but PRs are welcome.
 
 ### Alternatives
 
-- [Live.js](http://www.livejs.com/)
-- [BrowserSync](http://www.browsersync.io/) (requires Node.js)
+- [Live.js](http://livejs.com/)
+- [BrowserSync](https://browsersync.io/) (requires Node.js)
 - [Live Reload](http://livereload.com/) (native app)
 - [NppSync](https://github.com/duzun/NppSync) (for Notepad++ lovers)
