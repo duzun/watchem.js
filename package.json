@@ -1,17 +1,18 @@
 {
   "name": "watchem.js",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "A very simple script to watch for `.js` & `.css` files present in DOM over AJAX and reload the page/CSS when changes are detected.",
   "main": "watchem.js",
+  "unpkg": "watchem.min.js",
   "author": {
     "name": "Dumitru Uzun",
     "email": "contact@duzun.me",
-    "url": "http://DUzun.Me/"
+    "url": "https://DUzun.Me/"
   },
   "reveal": true,
   "scripts": {
-    "verup": "node ./node_modules/verup",
-    "build": "node ./build.js"
+    "verup": "verup",
+    "build": "gccs watchem.js"
   },
   "repository": {
     "type": "git",
@@ -35,7 +36,8 @@
   "homepage": "https://github.com/duzun/watchem.js#readme",
   "readmeFilename": "README.md",
   "devDependencies": {
-    "verup": "1.x.x"
+    "gccs": "^1.1",
+    "verup": "1.x"
   },
   "files": [
     "watchem.js",

@@ -19,14 +19,14 @@
  *
  *
  *  @license MIT
- *  @version 0.6.0
+ *  @version 0.6.1
  *  @author Dumitru Uzun (DUzun.Me)
  */
 
 /*globals define*/
 
 (function (win, undefined) {
-    var version = '0.6.0';
+    var version = '0.6.1';
 
     // Settings
     var interval     = 500  // Recheck interval
