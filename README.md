@@ -1,7 +1,7 @@
 watchem.js
 ==========
 
-##### @version 0.6.1
+##### @version 0.6.2
 
 A very simple script to watch for `.js` &amp; `.css` files present in DOM
 over AJAX and reload the page/CSS when changes are detected.

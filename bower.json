@@ -1,6 +1,6 @@
 {
   "name": "watchem.js",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A very simple script to watch for `.js` & `.css` files present in DOM over AJAX and reload the page/CSS when changes are detected.",
   "author": {
     "name": "Dumitru Uzun",

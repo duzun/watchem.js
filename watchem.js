@@ -19,14 +19,14 @@
  *
  *
  *  @license MIT
- *  @version 0.6.1
+ *  @version 0.6.2
  *  @author Dumitru Uzun (DUzun.Me)
  */
 
 /*globals define*/
 
 (function (win, undefined) {
-    var version = '0.6.1';
+    var version = '0.6.2';
 
     // Settings
     var interval     = 500  // Recheck interval
@@ -262,6 +262,7 @@
                 url: getNCUrl(url, method)
               , method: method
               , headers: headers
+              , dataType: 'text'
               // , crossDomain: true // removes X-Requested-With header
             }
           , onsuc
