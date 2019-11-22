@@ -79,7 +79,7 @@ window.jajax = function (opt, suc, err) {
 }
 ```
 
-If none of the above is found, it will try to load [cdn.rawgit.com/jAJAX](https://cdn.rawgit.com/duzun/jAJAX/master/dist/jajax.1.2.0.min.js)
+If none of the above is found, it will try to load [unpkg.com/jajax.js](https://unpkg.com/jajax.js)
 automatically.
 
 ### Browser Compatibility
